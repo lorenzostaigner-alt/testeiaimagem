@@ -231,7 +231,7 @@
             try {
                 // Usar testMode = true para não gastar créditos (conforme documentação)
                 // puter.ai.txt2img(prompt, testMode)
-                const image = await puter.ai.txt2img(prompt, true);
+                const image = await puter.ai.txt2img(prompt, false);
                 // Alternativa com modelo específico:
                 // const image = await puter.ai.txt2img(prompt, { model: "gpt-image-2", quality: "medium" });
 
