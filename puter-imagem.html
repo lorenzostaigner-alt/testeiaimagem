@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Imagens com Puter.js</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            text-align: center;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        button {
+            flex: 1;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .example-btn {
+            flex: 0 0 auto;
+            background: #f0f0f0;
+            color: #333;
+            padding: 16px 20px;
+        }
+        .example-btn:hover:not(:disabled) {
+            background: #e0e0e0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        #status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        #status.loading {
+            display: block;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        #status.error {
+            display: block;
+            background: #ffebee;
+            color: #c62828;
+        }
+        #status.success {
+            display: block;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        #imageContainer {
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px dashed #e0e0e0;
+        }
+        #imageContainer img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s ease-in;
+        }
+        #imageContainer .placeholder {
+            color: #999;
+            text-align: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Gerador de Imagens AI</h1>
+        <p class="subtitle">Powered by Puter.js - sem API key necessária</p>
+        
+        <div class="input-group">
+            <label for="prompt">Descreva a imagem que você quer gerar:</label>
+            <textarea id="prompt" placeholder="Ex: Um gato astronauta flutuando no espaço, arte digital vibrante">Um dragão majestoso pousado em uma montanha ao pôr do sol, estilo fantasia épica, altamente detalhado, iluminação dramática</textarea>
+        </div>
+
+        <div class="button-group">
+            <button id="generateBtn" onclick="gerarImagem()">
+                ✨ Gerar Imagem
+            </button>
+            <button class="example-btn" onclick="usarExemplo()" title="Usar prompt de exemplo">
+                💡 Exemplo
+            </button>
+        </div>
+
+        <div id="status"></div>
+
+        <div id="imageContainer">
+            <div class="placeholder">
+                <p>👆 Clique em "Gerar Imagem" para começar</p>
+                <p style="font-size: 14px; margin-top: 8px; color: #bbb;">A imagem aparecerá aqui</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const promptInput = document.getElementById('prompt');
+        const generateBtn = document.getElementById('generateBtn');
+        const statusDiv = document.getElementById('status');
+        const imageContainer = document.getElementById('imageContainer');
+
+        const exemplos = [
+            "Um dragão majestoso pousado em uma montanha ao pôr do sol, estilo fantasia épica, altamente detalhado",
+            "Uma cidade cyberpunk com luzes neon e carros voadores, chuva, noite",
+            "Um gato astronauta flutuando no espaço, arte digital vibrante, fofo",
+            "Jardim japonês sereno com cerejeiras em flor e lago de carpas",
+            "Retrato de uma guerreira samurai futurista, armadura brilhante"
+        ];
+
+        function usarExemplo() {
+            const exemplo = exemplos[Math.floor(Math.random() * exemplos.length)];
+            promptInput.value = exemplo;
+            promptInput.focus();
+        }
+
+        async function gerarImagem() {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                mostrarStatus('Por favor, digite um prompt primeiro!', 'error');
+                return;
+            }
+
+            // Desabilitar botão e mostrar loading
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ Gerando...';
+            mostrarStatus('', 'loading');
+            statusDiv.innerHTML = '<div class="spinner"></div>Gerando sua imagem com IA... isso pode levar 10-20 segundos';
+            
+            imageContainer.innerHTML = '<div class="placeholder"><div class="spinner"></div><p>Processando...</p></div>';
+
+            try {
+                // Usar testMode = true para não gastar créditos (conforme documentação)
+                // puter.ai.txt2img(prompt, testMode)
+                const image = await puter.ai.txt2img(prompt, true);
+                // Alternativa com modelo específico:
+                // const image = await puter.ai.txt2img(prompt, { model: "gpt-image-2", quality: "medium" });
+
+                // Limpar container e adicionar imagem
+                imageContainer.innerHTML = '';
+                imageContainer.appendChild(image);
+                
+                mostrarStatus('✅ Imagem gerada com sucesso!', 'success');
+                
+                // Scroll suave até a imagem
+                imageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            } catch (error) {
+                console.error('Erro ao gerar imagem:', error);
+                mostrarStatus('❌ Erro ao gerar imagem: ' + (error.message || 'Tente novamente'), 'error');
+                imageContainer.innerHTML = '<div class="placeholder"><p>❌ Falha ao gerar imagem</p><p style="font-size: 14px; margin-top: 8px;">Verifique o console para detalhes</p></div>';
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '✨ Gerar Imagem';
+            }
+        }
+
+        function mostrarStatus(mensagem, tipo) {
+            statusDiv.className = tipo;
+            statusDiv.innerHTML = mensagem;
+            if (tipo !== 'loading') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Permitir gerar com Enter (Ctrl+Enter no textarea)
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                gerarImagem();
+            }
+        });
+
+        // Verificar se Puter está carregado
+        window.addEventListener('load', () => {
+            if (typeof puter !== 'undefined' && puter.ai) {
+                console.log('✅ Puter.js carregado com sucesso!');
+            } else {
+                mostrarStatus('⚠️ Puter.js não carregou corretamente. Recarregue a página.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
